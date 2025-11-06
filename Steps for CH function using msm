@@ -1,13 +1,42 @@
 ### Steps to get Cumulative Hazard function using msm package
 #Assuming constant hazards
 
-# Data set needs to be in a msm format: 
+# 1. Data set needs to be in a msm format: 
   # One row per transition
   # Include time, state and observation type 
   # Sorted by id
 #Example shown for Fullo cohort, done the all the data frames
 
-# 1. Get an initial transition matrix based on my data ------------------------------------------------
+Resp_msm_0 <- Resp_0
+
+#Observation at entry time
+Resp_msm_0$time <- 0
+Resp_msm_0$state <- 1
+Resp_msm_0$obs_type <- 2
+
+#Observation either at infection time only infected patients
+Resp_msm_1 <- Resp_0[Resp_0$cens_infection_status==1,]
+Resp_msm_1$time <- Resp_msm_1$cens_infection_time
+Resp_msm_1$state <- 2
+Resp_msm_1$obs_type <- 2
+
+#Observation at discharge or censoring time (90 days)
+Resp_msm_2 <- Resp_msm_0
+Resp_msm_2$time <- ifelse(Resp_msm_2$cens_ICU_LOS_status == 1,  # For patients that were discharged
+                          Resp_msm_2$cens_ICU_LOS_time + 0.001, # to avoid that time to infection == time to discharge
+                         90) # For patients that were censored
+
+Resp_msm_2$state <- case_when(
+  Resp_msm_2$cens_ICU_LOS_status == 1 ~ 3, # For patients that were discharged
+  Resp_msm_2$cens_ICU_LOS_status == 0 & Resp_msm_2$cens_infection_status == 0 ~ 1, # Censored patients without infection stay in state 1
+  Resp_msm_2$cens_ICU_LOS_status == 0 & Resp_msm_2$cens_infection_status == 1 ~ 2 # Censored patientes with infection stay in state 2
+)
+
+Resp_msm_2$obs_type <- 2
+
+Resp_msm <- rbind(Resp_msm_0, Resp_msm_1, Resp_msm_2)
+
+# 2. Get an initial transition matrix based on my data ------------------------------------------------
 tra.msm <- crudeinits.msm(
   formula = state ~ time,
   subject = id,
@@ -19,7 +48,7 @@ tra.msm <- crudeinits.msm(
     nrow = 3, byrow = TRUE, dimnames = list(c(1, 2, 3), c(1, 2, 3)))
 )
 
-# 2. Fit the msm model ----------------------------------------------------------------------------
+# 3. Fit the msm model ----------------------------------------------------------------------------
 FC.msm.nc <- msm(
   state ~ time,
   subject = id,
@@ -30,17 +59,17 @@ FC.msm.nc <- msm(
                       # For intervaled censored data, add here cesor argument for state censed code
 )   
 
-# 3.Extract the estimated transition intensity matrix using qmatrix.msm function -------------------------
+# 4.Extract the estimated transition intensity matrix using qmatrix.msm function -------------------------
 
 qmatrix.msm(FC.msm.nc)
 
-# 4. save constant transition intensities (constant hazards)-----------------------------------------------
+# 5. save constant transition intensities (constant hazards)-----------------------------------------------
 a01_msm.FC<-as.numeric(qmatrix.msm(FC.msm.nc)[1,2][1])
 a02_msm.FC<-as.numeric(qmatrix.msm(FC.msm.nc)[1,3][1])
 a12_msm.FC<-as.numeric(qmatrix.msm(FC.msm.nc)[2,3][1])
 
 
-# 5. Use constant hazards to calculate the CH function over time---------------------------------------------
+# 6. Use constant hazards to calculate the CH function over time---------------------------------------------
 time <- 1:90
 
 cumhaz.exp <- function(t,a){t*a}
