@@ -1,0 +1,46 @@
+### Steps to get Cumulative Hazard function using msm package
+#Assuming constant hazards
+
+# Data set needs to be in a msm format: 
+  # One row per transition
+  # Include time, state and observation type 
+  # Sorted by id
+
+# 1. Get an initial transition matrix based on my data ------------------------------------------------
+tra.msm <- crudeinits.msm(
+  formula = state ~ time,
+  subject = id,
+  data = Resp_msm,
+  qmatrix = matrix(
+    c(0, 1, 1,
+      0, 0, 1,
+      0, 0, 0),
+    nrow = 3, byrow = TRUE, dimnames = list(c(1, 2, 3), c(1, 2, 3)))
+)
+
+# 2. Fit the msm model ----------------------------------------------------------------------------
+FC.msm.nc <- msm(
+  state ~ time,
+  subject = id,
+  data = Resp_msm ,
+  qmatrix = tra.msm,
+  obstype = obs_type
+)
+
+# 3.Extract the estimated transition intensity matrix using qmatrix.msm function -------------------------
+
+qmatrix.msm(FC.msm.nc)
+
+# 4. save constant transition intensities (constant hazards)-----------------------------------------------
+a01_msm.FC<-as.numeric(qmatrix.msm(FC.msm.nc)[1,2][1])
+a02_msm.FC<-as.numeric(qmatrix.msm(FC.msm.nc)[1,3][1])
+a12_msm.FC<-as.numeric(qmatrix.msm(FC.msm.nc)[2,3][1])
+
+
+# 5. Use constant hazards to calculate the CH function over time---------------------------------------------
+time <- 1:90
+
+cumhaz.exp <- function(t,a){t*a}
+cumHaz01.FC <- cumhaz.exp(time,  a01_msm.FC)   # A01
+cumHaz02.FC <- cumhaz.exp(time,  a02_msm.FC)   # A02
+cumHaz03.FC <- cumhaz.exp(time,  a12_msm.FC)   # A12
