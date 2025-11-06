@@ -25,7 +25,9 @@ FC.msm.nc <- msm(
   subject = id,
   data = Resp_msm ,
   qmatrix = tra.msm,
-  obstype = obs_type  # for weighted models, add subject.weights argument
+  obstype = obs_type  
+                      # For weighted models, add subject.weights argument
+                      # For intervaled censored data, add here cesor argument for state censed code
 )   
 
 # 3.Extract the estimated transition intensity matrix using qmatrix.msm function -------------------------
