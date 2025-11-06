@@ -5,6 +5,7 @@
   # One row per transition
   # Include time, state and observation type 
   # Sorted by id
+#Example shown for Fullo cohort, done the all the data frames
 
 # 1. Get an initial transition matrix based on my data ------------------------------------------------
 tra.msm <- crudeinits.msm(
@@ -24,8 +25,8 @@ FC.msm.nc <- msm(
   subject = id,
   data = Resp_msm ,
   qmatrix = tra.msm,
-  obstype = obs_type
-)
+  obstype = obs_type  # for weighted models, add subject.weights argument
+)   
 
 # 3.Extract the estimated transition intensity matrix using qmatrix.msm function -------------------------
 
