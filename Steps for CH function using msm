@@ -1,11 +1,12 @@
 ### Steps to get Cumulative Hazard function using msm package
 #Assuming constant hazards
 
+
+# Full cohort ----------------------------------------------------------------------------------------------------------------------------------
 # 1. Data set needs to be in a msm format: 
   # One row per transition
   # Include time, state and observation type 
   # Sorted by id
-#Example shown for Fullo cohort, done the all the data frames
 
 Resp_msm_0 <- Resp_0
 
@@ -77,6 +78,7 @@ cumHaz01.FC <- cumhaz.exp(time,  a01_msm.FC)   # A01
 cumHaz02.FC <- cumhaz.exp(time,  a02_msm.FC)   # A02
 cumHaz03.FC <- cumhaz.exp(time,  a12_msm.FC)   # A12
 
+# PPS unweighted ------------------------------------------------------------------------------------------------
 
 # 1. Prepare the data in a long format using msprep function
 
@@ -87,7 +89,7 @@ PPS_msm_0$time <- 0
 PPS_msm_0$state <- 1
 PPS_msm_0$obs_type <- 2
 
-#Observation either at infection time (patients infected) or at PPS time (patients not infected)
+#Observation either at infection time only infected patients
 PPS_msm_1 <- PPS_msm_0[PPS_msm_0$cens_infection_status==1,]
 PPS_msm_1$time <- PPS_msm_1$cens_infection_time
 PPS_msm_1$state <- 2
